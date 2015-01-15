@@ -49,6 +49,16 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
         self.addGestureRecognizer(longPressRecognizer)
     }
     
+    override func intrinsicContentSize() -> CGSize {
+        self.layoutIfNeeded()
+        return CGSize(width: UIViewNoIntrinsicMetric, height: self.contentSize.height)
+    }
+    
+    override func reloadData() {
+        super.reloadData()
+        self.invalidateIntrinsicContentSize()
+    }
+    
     func handleLongPress(longPressRecognizer: UILongPressGestureRecognizer) {
         let touchLocation = longPressRecognizer.locationInView(self)
         if (longPressRecognizer.state == UIGestureRecognizerState.Began) {
