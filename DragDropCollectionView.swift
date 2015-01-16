@@ -65,7 +65,7 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
         switch (longPressRecognizer.state) {
         case UIGestureRecognizerState.Began:
             draggedCellIndexPath = self.indexPathForItemAtPoint(touchLocation)
-            if (draggedCellIndexPath? != nil) {
+            if (draggedCellIndexPath != nil) {
                 draggingDelegate?.dragDropCollectionViewDraggingDidBeginWithCellAtIndexPath?(draggedCellIndexPath!)
                 let draggedCell = self.cellForItemAtIndexPath(draggedCellIndexPath!) as UICollectionViewCell!
                 draggingView = UIImageView(image: getRasterizedImageCopyOfCell(draggedCell))
