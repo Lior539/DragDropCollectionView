@@ -16,10 +16,21 @@ import UIKit
 
 class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     var draggingDelegate: DrapDropCollectionViewDelegate?
-    private var longPressRecognizer: UILongPressGestureRecognizer!
+    
+    private var longPressRecognizer: UILongPressGestureRecognizer = {
+        let longPressRecognizer = UILongPressGestureRecognizer()
+        longPressRecognizer.delaysTouchesBegan = false
+        longPressRecognizer.cancelsTouchesInView = false
+        longPressRecognizer.numberOfTouchesRequired = 1
+        longPressRecognizer.minimumPressDuration = 0.1
+        longPressRecognizer.allowableMovement = 10.0
+        return longPressRecognizer
+    }()
+    
     private var draggedCellIndexPath: NSIndexPath?
     private var draggingView: UIView?
     private var touchOffsetFromCenterOfCell: CGPoint?
+    private var isWiggling = false
     private let pingInterval = 0.3
     
     override init() {
@@ -38,15 +49,10 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     }
     
     private func commonInit() {
-        longPressRecognizer = UILongPressGestureRecognizer(target: self, action: Selector("handleLongPress:"))
-        longPressRecognizer.delaysTouchesBegan = true
-        longPressRecognizer.cancelsTouchesInView = false
-        longPressRecognizer.numberOfTouchesRequired = 1
-        longPressRecognizer.delegate = self
-        longPressRecognizer.minimumPressDuration = 0.1
-        longPressRecognizer.allowableMovement = 10.0
+        longPressRecognizer.addTarget(self, action: "handleLongPress:")
         longPressRecognizer.enabled = false
         self.addGestureRecognizer(longPressRecognizer)
+        
     }
     
     func handleLongPress(longPressRecognizer: UILongPressGestureRecognizer) {
@@ -121,19 +127,32 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
 //Wiggle Animation
 extension DragDropCollectionView {
     func startWiggle() {
-        CATransaction.begin()
         for cell in visibleCells() {
-            cell.layer.addAnimation(rotationAnimation(), forKey: "rotation")
-            cell.layer.addAnimation(bounceAnimation(), forKey: "bounce")
+            addWiggleAnimationToCell(cell as UICollectionViewCell)
         }
-        CATransaction.commit()
+        isWiggling = true
     }
     
     func stopWiggle() {
-        CATransaction.begin()
         for cell in visibleCells() {
             cell.layer.removeAllAnimations()
         }
+        isWiggling = false
+    }
+    
+    override func dequeueReusableCellWithReuseIdentifier(identifier: String, forIndexPath indexPath: NSIndexPath!) -> AnyObject {
+        let cell: AnyObject = super.dequeueReusableCellWithReuseIdentifier(identifier, forIndexPath: indexPath)
+        if isWiggling {
+            addWiggleAnimationToCell(cell as UICollectionViewCell)
+        }
+        return cell
+    }
+    
+    func addWiggleAnimationToCell(cell: UICollectionViewCell) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(false)
+        cell.layer.addAnimation(rotationAnimation(), forKey: "rotation")
+        cell.layer.addAnimation(bounceAnimation(), forKey: "bounce")
         CATransaction.commit()
     }
     
@@ -151,7 +170,7 @@ extension DragDropCollectionView {
     
     private func bounceAnimation() -> CAKeyframeAnimation {
         let animation = CAKeyframeAnimation(keyPath: "transform.translation.y")
-        let bounce = CGFloat(2.0)
+        let bounce = CGFloat(3.0)
         let duration = NSTimeInterval(0.12)
         let variance = Double(0.025)
         animation.values = [bounce, -bounce]
