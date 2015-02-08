@@ -55,9 +55,21 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
         
     }
     
+    override func intrinsicContentSize() -> CGSize {
+        self.layoutIfNeeded()
+        return CGSize(width: UIViewNoIntrinsicMetric, height: self.contentSize.height)
+    }
+    
+    override func reloadData() {
+        super.reloadData()
+        self.invalidateIntrinsicContentSize()
+    }
+    
     func handleLongPress(longPressRecognizer: UILongPressGestureRecognizer) {
         let touchLocation = longPressRecognizer.locationInView(self)
-        if (longPressRecognizer.state == UIGestureRecognizerState.Began) {
+        
+        switch (longPressRecognizer.state) {
+        case UIGestureRecognizerState.Began:
             draggedCellIndexPath = self.indexPathForItemAtPoint(touchLocation)
             if (draggedCellIndexPath? != nil) {
                 draggingDelegate?.dragDropCollectionViewDraggingDidBeginWithCellAtIndexPath?(draggedCellIndexPath!)
@@ -72,48 +84,49 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
                     self.draggingView!.alpha = 0.8
                 })
             }
-        }
-        
-        if (longPressRecognizer.state == UIGestureRecognizerState.Changed) {
+            
+        case UIGestureRecognizerState.Changed:
             if draggedCellIndexPath != nil {
-                draggingView!.center = CGPoint(x: touchLocation.x + touchOffsetFromCenterOfCell!.x, y: touchLocation.y + touchOffsetFromCenterOfCell!.y)
-                let previousTouchLocation = longPressRecognizer.locationInView(self)
-                dispatchOnMainQueueAfterDelay(pingInterval, { () -> () in
-                    let currentTouchLocation = self.longPressRecognizer.locationInView(self)
-                    if currentTouchLocation.x != NSDecimalNumber.notANumber() && currentTouchLocation.y != NSDecimalNumber.notANumber() {
-                        if distanceBetweenPoints(previousTouchLocation, currentTouchLocation) < CGFloat(20.0) {
-                            if let newIndexPathForCell = self.indexPathForItemAtPoint(currentTouchLocation) {
-                                if newIndexPathForCell != self.draggedCellIndexPath! {
-                                    self.draggingDelegate?.dragDropCollectionViewDidMoveCellFromInitialIndexPath(self.draggedCellIndexPath!, toNewIndexPath: newIndexPathForCell)
-                                    self.moveItemAtIndexPath(self.draggedCellIndexPath!, toIndexPath: newIndexPathForCell)
-                                    let draggedCell = self.cellForItemAtIndexPath(newIndexPathForCell)!
-                                    draggedCell.alpha = 0
-                                    self.draggedCellIndexPath = newIndexPathForCell
-                                }
+            draggingView!.center = CGPoint(x: touchLocation.x + touchOffsetFromCenterOfCell!.x, y: touchLocation.y + touchOffsetFromCenterOfCell!.y)
+            let previousTouchLocation = longPressRecognizer.locationInView(self)
+            dispatchOnMainQueueAfterDelay(pingInterval, { () -> () in
+                let currentTouchLocation = self.longPressRecognizer.locationInView(self)
+                if currentTouchLocation.x != NSDecimalNumber.notANumber() && currentTouchLocation.y != NSDecimalNumber.notANumber() {
+                    if distanceBetweenPoints(previousTouchLocation, currentTouchLocation) < CGFloat(20.0) {
+                        if let newIndexPathForCell = self.indexPathForItemAtPoint(currentTouchLocation) {
+                            if newIndexPathForCell != self.draggedCellIndexPath! {
+                                self.draggingDelegate?.dragDropCollectionViewDidMoveCellFromInitialIndexPath(self.draggedCellIndexPath!, toNewIndexPath: newIndexPathForCell)
+                                self.moveItemAtIndexPath(self.draggedCellIndexPath!, toIndexPath: newIndexPathForCell)
+                                let draggedCell = self.cellForItemAtIndexPath(newIndexPathForCell)!
+                                draggedCell.alpha = 0
+                                self.draggedCellIndexPath = newIndexPathForCell
                             }
                         }
                     }
-                })
-            }
+                }
+            })
         }
-        
-        if (longPressRecognizer.state == UIGestureRecognizerState.Ended) {
-            if draggedCellIndexPath != nil {
-                draggingDelegate?.dragDropCollectionViewDraggingDidEndForCellAtIndexPath?(draggedCellIndexPath!)
-                let draggedCell = self.cellForItemAtIndexPath(draggedCellIndexPath!)!
-                UIView.animateWithDuration(0.4, animations: { () -> Void in
-                    self.draggingView!.transform = CGAffineTransformIdentity
-                    self.draggingView!.alpha = 1.0
-                    self.draggingView!.center = draggedCell.center
-                }, completion: { (finished) -> Void in
-                    self.draggingView!.removeFromSuperview()
-                    self.draggingView = nil
-                    draggedCell.alpha = 1.0
-                    self.draggedCellIndexPath = nil
-                })
+        case UIGestureRecognizerState.Ended:
+            if (longPressRecognizer.state == UIGestureRecognizerState.Ended) {
+                if draggedCellIndexPath != nil {
+                    draggingDelegate?.dragDropCollectionViewDraggingDidEndForCellAtIndexPath?(draggedCellIndexPath!)
+                    let draggedCell = self.cellForItemAtIndexPath(draggedCellIndexPath!)!
+                    UIView.animateWithDuration(0.4, animations: { () -> Void in
+                        self.draggingView!.transform = CGAffineTransformIdentity
+                        self.draggingView!.alpha = 1.0
+                        self.draggingView!.center = draggedCell.center
+                    }, completion: { (finished) -> Void in
+                        self.draggingView!.removeFromSuperview()
+                        self.draggingView = nil
+                        draggedCell.alpha = 1.0
+                        self.draggedCellIndexPath = nil
+                    })
+                }
             }
+        default: ()
         }
     }
+    
     
     func enableDragging(enable: Bool) {
         if enable {
