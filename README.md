@@ -43,7 +43,9 @@ optional func dragDropCollectionViewDraggingDidEndForCellAtIndexPath(indexPath: 
 Methods
 --------------
 Dragging can be easily enabled and disabled using the follwing method:
+````
 func enableDragging(enable: Bool)
+````
 
 To start the wiggle animation, use:
 
