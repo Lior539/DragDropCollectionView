@@ -112,15 +112,17 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
             if (longPressRecognizer.state == UIGestureRecognizerState.Ended) {
                 if draggedCellIndexPath != nil {
                     draggingDelegate?.dragDropCollectionViewDraggingDidEndForCellAtIndexPath?(draggedCellIndexPath!)
-                    let draggedCell = self.cellForItemAtIndexPath(draggedCellIndexPath!)!
+                    let draggedCell = self.cellForItemAtIndexPath(draggedCellIndexPath!)?
                     UIView.animateWithDuration(0.4, animations: { () -> Void in
                         self.draggingView!.transform = CGAffineTransformIdentity
                         self.draggingView!.alpha = 1.0
-                        self.draggingView!.center = draggedCell.center
+                        if (draggedCell != nil) {
+                            self.draggingView!.center = draggedCell!.center
+                        }
                     }, completion: { (finished) -> Void in
                         self.draggingView!.removeFromSuperview()
                         self.draggingView = nil
-                        draggedCell.alpha = 1.0
+                        draggedCell?.alpha = 1.0
                         self.draggedCellIndexPath = nil
                     })
                 }
@@ -168,6 +170,12 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
 
 //AutoScroll
 extension DragDropCollectionView {
+    enum AutoScrollDirection: Int {
+        case Invalid = 0
+        case TowardsOrigin = 1
+        case AwayFromOrigin = 2
+    }
+    
     private func autoScroll(direction: AutoScrollDirection) {
         let currentLongPressTouchLocation = self.longPressRecognizer.locationInView(self)
         var increment: CGFloat
@@ -205,12 +213,6 @@ extension DragDropCollectionView {
                     })
             }
         }
-    }
-    
-    enum AutoScrollDirection: Int {
-        case Invalid = 0
-        case TowardsOrigin = 1
-        case AwayFromOrigin = 2
     }
     
     private func shouldAutoScroll(#previousTouchLocation: CGPoint) -> (shouldScroll: Bool, direction: AutoScrollDirection) {
