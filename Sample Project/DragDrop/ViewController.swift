@@ -50,8 +50,6 @@ class ViewController: UIViewController, UICollectionViewDataSource, DrapDropColl
             dragDropCollectionView.stopWiggle()
         }
     }
-    
-    
 }
 
 
