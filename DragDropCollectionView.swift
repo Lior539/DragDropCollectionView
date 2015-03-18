@@ -186,7 +186,7 @@ extension DragDropCollectionView {
             increment = 50.0
         }
         newContentOffset = CGPoint(x: self.contentOffset.x, y: self.contentOffset.y + increment)
-        if ((direction == AutoScrollDirection.TowardsOrigin && newContentOffset.y < 0) || (direction == AutoScrollDirection.AwayFromOrigin && newContentOffset.y > self.contentSize.height)) {
+        if ((direction == AutoScrollDirection.TowardsOrigin && newContentOffset.y < 0) || (direction == AutoScrollDirection.AwayFromOrigin && newContentOffset.y > self.contentSize.height - self.frame.height)) {
             dispatchOnMainQueueAfterDelay(0.3, { () -> () in
                 self.isAutoScrolling = false
             })
@@ -281,7 +281,7 @@ extension DragDropCollectionView {
     
     private func rotationAnimation() -> CAKeyframeAnimation {
         let animation = CAKeyframeAnimation(keyPath: "transform.rotation.z")
-        let angle = CGFloat(0.06)
+        let angle = CGFloat(0.04)
         let duration = NSTimeInterval(0.1)
         let variance = Double(0.025)
         animation.values = [angle, -angle]
@@ -312,7 +312,7 @@ extension DragDropCollectionView {
 //Assisting Functions
 extension DragDropCollectionView {
     private func getRasterizedImageCopyOfCell(cell: UICollectionViewCell) -> UIImage {
-        UIGraphicsBeginImageContextWithOptions(cell.bounds.size, cell.opaque, 0.0)
+        UIGraphicsBeginImageContextWithOptions(cell.bounds.size, false, 0.0)
         cell.layer.renderInContext(UIGraphicsGetCurrentContext())
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
