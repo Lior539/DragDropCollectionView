@@ -158,10 +158,10 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     }
     
     private func swapDraggedCellWithCellAtIndexPath(newIndexPath: NSIndexPath) {
-        self.draggingDelegate?.dragDropCollectionViewDidMoveCellFromInitialIndexPath(self.draggedCellIndexPath!, toNewIndexPath: newIndexPath)
         self.moveItemAtIndexPath(self.draggedCellIndexPath!, toIndexPath: newIndexPath)
         let draggedCell = self.cellForItemAtIndexPath(newIndexPath)!
         draggedCell.alpha = 0
+        self.draggingDelegate?.dragDropCollectionViewDidMoveCellFromInitialIndexPath(self.draggedCellIndexPath!, toNewIndexPath: newIndexPath)
         self.draggedCellIndexPath = newIndexPath
     }
     
