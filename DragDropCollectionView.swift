@@ -34,11 +34,6 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     private let pingInterval = 0.3
     private var isAutoScrolling = false
     
-    override init() {
-        super.init()
-        commonInit()
-    }
-    
     required init(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         commonInit()
@@ -109,23 +104,21 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
                 })
             }
         case UIGestureRecognizerState.Ended:
-            if (longPressRecognizer.state == UIGestureRecognizerState.Ended) {
-                if draggedCellIndexPath != nil {
-                    draggingDelegate?.dragDropCollectionViewDraggingDidEndForCellAtIndexPath?(draggedCellIndexPath!)
-                    let draggedCell = self.cellForItemAtIndexPath(draggedCellIndexPath!)?
-                    UIView.animateWithDuration(0.4, animations: { () -> Void in
-                        self.draggingView!.transform = CGAffineTransformIdentity
-                        self.draggingView!.alpha = 1.0
-                        if (draggedCell != nil) {
-                            self.draggingView!.center = draggedCell!.center
-                        }
-                    }, completion: { (finished) -> Void in
-                        self.draggingView!.removeFromSuperview()
-                        self.draggingView = nil
-                        draggedCell?.alpha = 1.0
-                        self.draggedCellIndexPath = nil
-                    })
-                }
+            if draggedCellIndexPath != nil {
+                draggingDelegate?.dragDropCollectionViewDraggingDidEndForCellAtIndexPath?(draggedCellIndexPath!)
+                let draggedCell = self.cellForItemAtIndexPath(draggedCellIndexPath!)
+                UIView.animateWithDuration(0.4, animations: { () -> Void in
+                    self.draggingView!.transform = CGAffineTransformIdentity
+                    self.draggingView!.alpha = 1.0
+                    if (draggedCell != nil) {
+                        self.draggingView!.center = draggedCell!.center
+                    }
+                }, completion: { (finished) -> Void in
+                    self.draggingView!.removeFromSuperview()
+                    self.draggingView = nil
+                    draggedCell?.alpha = 1.0
+                    self.draggedCellIndexPath = nil
+                })
             }
         default: ()
         }
@@ -251,7 +244,7 @@ extension DragDropCollectionView {
 extension DragDropCollectionView {
     func startWiggle() {
         for cell in visibleCells() {
-            addWiggleAnimationToCell(cell as UICollectionViewCell)
+            addWiggleAnimationToCell(cell as! UICollectionViewCell)
         }
         isWiggling = true
     }
@@ -266,7 +259,7 @@ extension DragDropCollectionView {
     override func dequeueReusableCellWithReuseIdentifier(identifier: String, forIndexPath indexPath: NSIndexPath!) -> AnyObject {
         let cell: AnyObject = super.dequeueReusableCellWithReuseIdentifier(identifier, forIndexPath: indexPath)
         if isWiggling {
-            addWiggleAnimationToCell(cell as UICollectionViewCell)
+            addWiggleAnimationToCell(cell as! UICollectionViewCell)
         }
         return cell
     }
