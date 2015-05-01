@@ -8,7 +8,7 @@
 
 import UIKit
 
-@objc protocol DrapDropCollectionViewDelegate: UICollectionViewDelegate {
+@objc protocol DrapDropCollectionViewDelegate {
     func dragDropCollectionViewDidMoveCellFromInitialIndexPath(initialIndexPath: NSIndexPath, toNewIndexPath newIndexPath: NSIndexPath)
     optional func dragDropCollectionViewDraggingDidBeginWithCellAtIndexPath(indexPath: NSIndexPath)
     optional func dragDropCollectionViewDraggingDidEndForCellAtIndexPath(indexPath: NSIndexPath)
@@ -260,6 +260,8 @@ extension DragDropCollectionView {
         let cell: AnyObject = super.dequeueReusableCellWithReuseIdentifier(identifier, forIndexPath: indexPath)
         if isWiggling {
             addWiggleAnimationToCell(cell as! UICollectionViewCell)
+        } else {
+            cell.layer.removeAllAnimations()
         }
         return cell
     }
