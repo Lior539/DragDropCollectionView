@@ -21,7 +21,7 @@ This inherits from UICollectionViewDelegate and is to be used in place of the '.
 DragDropCollectionView has the following delegate:  
 
 ````
-var draggingDelegate: DrapDropCollectionViewDelegate?
+weak var draggingDelegate: DrapDropCollectionViewDelegate?
 ````
 
 The DragDropCollectionViewDelegate has the following required methods:
