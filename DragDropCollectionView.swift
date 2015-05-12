@@ -15,7 +15,7 @@ import UIKit
 }
 
 class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
-    var draggingDelegate: DrapDropCollectionViewDelegate?
+    weak var draggingDelegate: DrapDropCollectionViewDelegate?
     
     private var longPressRecognizer: UILongPressGestureRecognizer = {
         let longPressRecognizer = UILongPressGestureRecognizer()
