@@ -6,6 +6,7 @@
 //  Copyright (c) 2014 LiorN. All rights reserved.
 // 3rd test for git submodule
 
+//Just testing git subtree for the second time
 import UIKit
 
 @objc protocol DrapDropCollectionViewDelegate {
