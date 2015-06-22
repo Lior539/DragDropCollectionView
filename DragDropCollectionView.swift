@@ -4,7 +4,7 @@
 //
 //  Created by Lior Neu-ner on 2014/12/30.
 //  Copyright (c) 2014 LiorN. All rights reserved.
-//
+// 3rd test for git submodule
 
 import UIKit
 
