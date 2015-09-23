@@ -1,5 +1,7 @@
 # DragDropCollectionView
-A UICollectionView which allows for easy drag and drop to reorder cells. Mimicks the drag and drop on the iOS Springboard when reordering apps (wiggle animation included!)
+A UICollectionView which allows for easy drag and drop to reorder cells. Mimicks the drag and drop on the iOS Springboard when reordering apps (wiggle animation included!).
+
+I have also included automatic scrolling for when the collection view's content does not all fit in the frame
 
 ![Alt text](/demo.gif)
 
