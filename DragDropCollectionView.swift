@@ -11,14 +11,14 @@ import UIKit
 
 @objc protocol DrapDropCollectionViewDelegate {
     func dragDropCollectionViewDidMoveCellFromInitialIndexPath(initialIndexPath: NSIndexPath, toNewIndexPath newIndexPath: NSIndexPath)
-    optional func dragDropCollectionViewDraggingDidBeginWithCellAtIndexPath(indexPath: NSIndexPath)
-    optional func dragDropCollectionViewDraggingDidEndForCellAtIndexPath(indexPath: NSIndexPath)
+    @objc optional func dragDropCollectionViewDraggingDidBeginWithCellAtIndexPath(indexPath: NSIndexPath)
+    @objc optional func dragDropCollectionViewDraggingDidEndForCellAtIndexPath(indexPath: NSIndexPath)
 }
 
 class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     weak var draggingDelegate: DrapDropCollectionViewDelegate?
     
-    private var longPressRecognizer: UILongPressGestureRecognizer = {
+    var longPressRecognizer: UILongPressGestureRecognizer = {
         let longPressRecognizer = UILongPressGestureRecognizer()
         longPressRecognizer.delaysTouchesBegan = false
         longPressRecognizer.cancelsTouchesInView = false
@@ -29,13 +29,18 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     }()
     
     private var draggedCellIndexPath: NSIndexPath?
-    private var draggingView: UIView?
+    var draggingView: UIView?
     private var touchOffsetFromCenterOfCell: CGPoint?
-    private var isWiggling = false
+    var isWiggling = false
     private let pingInterval = 0.3
-    private var isAutoScrolling = false
+    var isAutoScrolling = false
     
-    required init(coder aDecoder: NSCoder) {
+    override var intrinsicContentSize: CGSize {
+        self.layoutIfNeeded()
+        return CGSize(width: UIViewNoIntrinsicMetric, height: self.contentSize.height)
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         commonInit()
     }
@@ -46,15 +51,10 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     }
     
     private func commonInit() {
-        longPressRecognizer.addTarget(self, action: "handleLongPress:")
-        longPressRecognizer.enabled = false
+        longPressRecognizer.addTarget(self, action: Selector(("handleLongPress:")))
+        longPressRecognizer.isEnabled = false
         self.addGestureRecognizer(longPressRecognizer)
         
-    }
-    
-    override func intrinsicContentSize() -> CGSize {
-        self.layoutIfNeeded()
-        return CGSize(width: UIViewNoIntrinsicMetric, height: self.contentSize.height)
     }
     
     override func reloadData() {
@@ -63,53 +63,53 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     }
     
     func handleLongPress(longPressRecognizer: UILongPressGestureRecognizer) {
-        let touchLocation = longPressRecognizer.locationInView(self)
+        let touchLocation = longPressRecognizer.location(in: self)
         
         switch (longPressRecognizer.state) {
-        case UIGestureRecognizerState.Began:
-            draggedCellIndexPath = self.indexPathForItemAtPoint(touchLocation)
+        case UIGestureRecognizerState.began:
+            draggedCellIndexPath = self.indexPathForItem(at: touchLocation) as NSIndexPath?
             if (draggedCellIndexPath != nil) {
-                draggingDelegate?.dragDropCollectionViewDraggingDidBeginWithCellAtIndexPath?(draggedCellIndexPath!)
-                let draggedCell = self.cellForItemAtIndexPath(draggedCellIndexPath!) as UICollectionViewCell!
-                draggingView = UIImageView(image: getRasterizedImageCopyOfCell(draggedCell))
-                draggingView!.center = draggedCell.center
+                draggingDelegate?.dragDropCollectionViewDraggingDidBeginWithCellAtIndexPath?(indexPath: draggedCellIndexPath!)
+                let draggedCell = self.cellForItem(at: draggedCellIndexPath! as IndexPath) as UICollectionViewCell!
+                draggingView = UIImageView(image: getRasterizedImageCopyOfCell(cell: draggedCell!))
+                draggingView!.center = (draggedCell!.center)
                 self.addSubview(draggingView!)
-                draggedCell.alpha = 0.0
-                touchOffsetFromCenterOfCell = CGPoint(x: draggedCell.center.x - touchLocation.x, y: draggedCell.center.y - touchLocation.y)
-                UIView.animateWithDuration(0.4, animations: { () -> Void in
-                    self.draggingView!.transform = CGAffineTransformMakeScale(1.3, 1.3)
+                draggedCell!.alpha = 0.0
+                touchOffsetFromCenterOfCell = CGPoint(x: draggedCell!.center.x - touchLocation.x, y: draggedCell!.center.y - touchLocation.y)
+                UIView.animate(withDuration: 0.4, animations: { () -> Void in
+                    self.draggingView!.transform = CGAffineTransform(scaleX: 1.3, y: 1.3)
                     self.draggingView!.alpha = 0.8
                 })
             }
             
-        case UIGestureRecognizerState.Changed:
+        case UIGestureRecognizerState.changed:
             if draggedCellIndexPath != nil {
                 draggingView!.center = CGPoint(x: touchLocation.x + touchOffsetFromCenterOfCell!.x, y: touchLocation.y + touchOffsetFromCenterOfCell!.y)
 
                 if !isAutoScrolling {
 
-                    dispatchOnMainQueueAfterDelay(pingInterval, { () -> () in
+                    dispatchOnMainQueueAfter(delay: pingInterval, closure: { () -> () in
                         let scroller = self.shouldAutoScroll(previousTouchLocation: touchLocation)
                         if  (scroller.shouldScroll) {
-                            self.autoScroll(scroller.direction)
+                            self.autoScroll(direction: scroller.direction)
                             self.isAutoScrolling = true
                         }
                     })
                 }
                 
-                dispatchOnMainQueueAfterDelay(pingInterval, { () -> () in
+                dispatchOnMainQueueAfter(delay: pingInterval, closure: { () -> () in
                     let shouldSwapCellsTuple = self.shouldSwapCells(previousTouchLocation: touchLocation)
                     if shouldSwapCellsTuple.shouldSwap {
-                        self.swapDraggedCellWithCellAtIndexPath(shouldSwapCellsTuple.newIndexPath!)
+                        self.swapDraggedCellWithCellAtIndexPath(newIndexPath: shouldSwapCellsTuple.newIndexPath!)
                     }
                 })
             }
-        case UIGestureRecognizerState.Ended:
+        case UIGestureRecognizerState.ended:
             if draggedCellIndexPath != nil {
-                draggingDelegate?.dragDropCollectionViewDraggingDidEndForCellAtIndexPath?(draggedCellIndexPath!)
-                let draggedCell = self.cellForItemAtIndexPath(draggedCellIndexPath!)
-                UIView.animateWithDuration(0.4, animations: { () -> Void in
-                    self.draggingView!.transform = CGAffineTransformIdentity
+                draggingDelegate?.dragDropCollectionViewDraggingDidEndForCellAtIndexPath?(indexPath: draggedCellIndexPath!)
+                let draggedCell = self.cellForItem(at: draggedCellIndexPath! as IndexPath)
+                UIView.animate(withDuration: 0.4, animations: { () -> Void in
+                    self.draggingView!.transform = CGAffineTransform.identity
                     self.draggingView!.alpha = 1.0
                     if (draggedCell != nil) {
                         self.draggingView!.center = draggedCell!.center
@@ -128,22 +128,22 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     
     func enableDragging(enable: Bool) {
         if enable {
-            longPressRecognizer.enabled = true
+            longPressRecognizer.isEnabled = true
         } else {
-            longPressRecognizer.enabled = false
+            longPressRecognizer.isEnabled = false
         }
     }
     
-    private func shouldSwapCells(#previousTouchLocation: CGPoint) -> (shouldSwap: Bool, newIndexPath: NSIndexPath?) {
+    private func shouldSwapCells(previousTouchLocation: CGPoint) -> (shouldSwap: Bool, newIndexPath: NSIndexPath?) {
         var shouldSwap = false
         var newIndexPath: NSIndexPath?
-        let currentTouchLocation = self.longPressRecognizer.locationInView(self)
-        if currentTouchLocation.x != NSDecimalNumber.notANumber() && currentTouchLocation.y != NSDecimalNumber.notANumber() {
-            if distanceBetweenPoints(previousTouchLocation, currentTouchLocation) < CGFloat(20.0) {
-                if let newIndexPathForCell = self.indexPathForItemAtPoint(currentTouchLocation) {
-                    if newIndexPathForCell != self.draggedCellIndexPath! {
+        let currentTouchLocation = self.longPressRecognizer.location(in: self)
+        if !Double(currentTouchLocation.x).isNaN && !Double(currentTouchLocation.y).isNaN {
+            if distanceBetweenPoints(firstPoint: previousTouchLocation, secondPoint: currentTouchLocation) < CGFloat(20.0) {
+                if let newIndexPathForCell = self.indexPathForItem(at: currentTouchLocation) {
+                    if newIndexPathForCell != self.draggedCellIndexPath! as IndexPath {
                         shouldSwap = true
-                        newIndexPath = newIndexPathForCell
+                        newIndexPath = newIndexPathForCell as NSIndexPath?
                     }
                 }
             }
@@ -152,10 +152,10 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     }
     
     private func swapDraggedCellWithCellAtIndexPath(newIndexPath: NSIndexPath) {
-        self.moveItemAtIndexPath(self.draggedCellIndexPath!, toIndexPath: newIndexPath)
-        let draggedCell = self.cellForItemAtIndexPath(newIndexPath)!
+        self.moveItem(at: self.draggedCellIndexPath! as IndexPath, to: newIndexPath as IndexPath)
+        let draggedCell = self.cellForItem(at: newIndexPath as IndexPath)!
         draggedCell.alpha = 0
-        self.draggingDelegate?.dragDropCollectionViewDidMoveCellFromInitialIndexPath(self.draggedCellIndexPath!, toNewIndexPath: newIndexPath)
+        self.draggingDelegate?.dragDropCollectionViewDidMoveCellFromInitialIndexPath(initialIndexPath: self.draggedCellIndexPath!, toNewIndexPath: newIndexPath)
         self.draggedCellIndexPath = newIndexPath
     }
     
@@ -170,8 +170,8 @@ extension DragDropCollectionView {
         case AwayFromOrigin = 2
     }
     
-    private func autoScroll(direction: AutoScrollDirection) {
-        let currentLongPressTouchLocation = self.longPressRecognizer.locationInView(self)
+    func autoScroll(direction: AutoScrollDirection) {
+        let currentLongPressTouchLocation = self.longPressRecognizer.location(in: self)
         var increment: CGFloat
         var newContentOffset: CGPoint
         if (direction == AutoScrollDirection.TowardsOrigin) {
@@ -181,13 +181,13 @@ extension DragDropCollectionView {
         }
         newContentOffset = CGPoint(x: self.contentOffset.x, y: self.contentOffset.y + increment)
         if ((direction == AutoScrollDirection.TowardsOrigin && newContentOffset.y < 0) || (direction == AutoScrollDirection.AwayFromOrigin && newContentOffset.y > self.contentSize.height - self.frame.height)) {
-            dispatchOnMainQueueAfterDelay(0.3, { () -> () in
+            dispatchOnMainQueueAfter(delay: 0.3, closure: { () -> () in
                 self.isAutoScrolling = false
             })
         } else {
-            UIView.animateWithDuration(0.3
+            UIView.animate(withDuration: 0.3
                 , delay: 0.0
-                , options: UIViewAnimationOptions.CurveLinear
+                , options: UIViewAnimationOptions.curveLinear
                 , animations: { () -> Void in
                     self.setContentOffset(newContentOffset, animated: false)
                     if (self.draggingView != nil) {
@@ -196,11 +196,11 @@ extension DragDropCollectionView {
                         self.draggingView!.frame = draggingFrame
                     }
                 }) { (finished) -> Void in
-                    dispatchOnMainQueueAfterDelay(0.0, { () -> () in
+                    dispatchOnMainQueueAfter(delay: 0.0, closure: { () -> () in
                         let updatedTouchLocationWithNewOffset = CGPoint(x: currentLongPressTouchLocation.x, y: currentLongPressTouchLocation.y + increment)
                         let scroller = self.shouldAutoScroll(previousTouchLocation: updatedTouchLocationWithNewOffset)
                         if scroller.shouldScroll {
-                            self.autoScroll(scroller.direction)
+                            self.autoScroll(direction: scroller.direction)
                         } else {
                             self.isAutoScrolling = false
                         }
@@ -209,22 +209,22 @@ extension DragDropCollectionView {
         }
     }
     
-    private func shouldAutoScroll(#previousTouchLocation: CGPoint) -> (shouldScroll: Bool, direction: AutoScrollDirection) {
-        let previousTouchLocation = self.convertPoint(previousTouchLocation, toView: self.superview)
-        let currentTouchLocation = self.longPressRecognizer.locationInView(self.superview)
+    func shouldAutoScroll(previousTouchLocation: CGPoint) -> (shouldScroll: Bool, direction: AutoScrollDirection) {
+        let previousTouchLocation = self.convert(previousTouchLocation, to: self.superview)
+        let currentTouchLocation = self.longPressRecognizer.location(in: self.superview)
 
         if let flowLayout = self.collectionViewLayout as? UICollectionViewFlowLayout {
-            if currentTouchLocation.x != NSDecimalNumber.notANumber() && currentTouchLocation.y != NSDecimalNumber.notANumber() {
-                if distanceBetweenPoints(previousTouchLocation, currentTouchLocation) < CGFloat(20.0) {
+            if !Double(currentTouchLocation.x).isNaN && !Double(currentTouchLocation.y).isNaN {
+                if distanceBetweenPoints(firstPoint: previousTouchLocation, secondPoint: currentTouchLocation) < CGFloat(20.0) {
                     let scrollDirection = flowLayout.scrollDirection
                     var scrollBoundsSize: CGSize
                     let scrollBoundsLength: CGFloat = 50.0
                     var scrollRectAtEnd: CGRect
                     switch scrollDirection {
-                    case UICollectionViewScrollDirection.Horizontal:
+                    case UICollectionViewScrollDirection.horizontal:
                         scrollBoundsSize = CGSize(width: scrollBoundsLength, height: self.frame.height)
                         scrollRectAtEnd = CGRect(x: self.frame.origin.x + self.frame.width - scrollBoundsSize.width , y: self.frame.origin.y, width: scrollBoundsSize.width, height: self.frame.height)
-                    case UICollectionViewScrollDirection.Vertical:
+                    case UICollectionViewScrollDirection.vertical:
                         scrollBoundsSize = CGSize(width: self.frame.width, height: scrollBoundsLength)
                         scrollRectAtEnd = CGRect(x: self.frame.origin.x, y: self.frame.origin.y + self.frame.height - scrollBoundsSize.height, width: self.frame.width, height: scrollBoundsSize.height)
                     }
@@ -244,45 +244,45 @@ extension DragDropCollectionView {
 //Wiggle Animation
 extension DragDropCollectionView {
     func startWiggle() {
-        for cell in visibleCells() {
-            addWiggleAnimationToCell(cell as! UICollectionViewCell)
+        for cell in visibleCells {
+            addWiggleAnimationTo(cell: cell )
         }
         isWiggling = true
     }
     
     func stopWiggle() {
-        for cell in visibleCells() {
+        for cell in visibleCells {
             cell.layer.removeAllAnimations()
         }
         isWiggling = false
     }
     
-    override func dequeueReusableCellWithReuseIdentifier(identifier: String, forIndexPath indexPath: NSIndexPath!) -> AnyObject {
-        let cell: AnyObject = super.dequeueReusableCellWithReuseIdentifier(identifier, forIndexPath: indexPath)
+    override func dequeueReusableCell(withReuseIdentifier identifier: String, for indexPath: IndexPath) -> UICollectionViewCell {
+        let cell: AnyObject = super.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath as IndexPath)
         if isWiggling {
-            addWiggleAnimationToCell(cell as! UICollectionViewCell)
+            addWiggleAnimationTo(cell: cell as! UICollectionViewCell)
         } else {
             cell.layer.removeAllAnimations()
         }
-        return cell
+        return cell as! UICollectionViewCell
     }
     
-    func addWiggleAnimationToCell(cell: UICollectionViewCell) {
+    func addWiggleAnimationTo(cell: UICollectionViewCell) {
         CATransaction.begin()
         CATransaction.setDisableActions(false)
-        cell.layer.addAnimation(rotationAnimation(), forKey: "rotation")
-        cell.layer.addAnimation(bounceAnimation(), forKey: "bounce")
+        cell.layer.add(rotationAnimation(), forKey: "rotation")
+        cell.layer.add(bounceAnimation(), forKey: "bounce")
         CATransaction.commit()
     }
     
     private func rotationAnimation() -> CAKeyframeAnimation {
         let animation = CAKeyframeAnimation(keyPath: "transform.rotation.z")
         let angle = CGFloat(0.04)
-        let duration = NSTimeInterval(0.1)
+        let duration = TimeInterval(0.1)
         let variance = Double(0.025)
         animation.values = [angle, -angle]
         animation.autoreverses = true
-        animation.duration = self.randomizeInterval(duration, withVariance: variance)
+        animation.duration = self.randomize(interval: duration, withVariance: variance)
         animation.repeatCount = Float.infinity
         return animation
     }
@@ -290,16 +290,16 @@ extension DragDropCollectionView {
     private func bounceAnimation() -> CAKeyframeAnimation {
         let animation = CAKeyframeAnimation(keyPath: "transform.translation.y")
         let bounce = CGFloat(3.0)
-        let duration = NSTimeInterval(0.12)
+        let duration = TimeInterval(0.12)
         let variance = Double(0.025)
         animation.values = [bounce, -bounce]
         animation.autoreverses = true
-        animation.duration = self.randomizeInterval(duration, withVariance: variance)
+        animation.duration = self.randomize(interval: duration, withVariance: variance)
         animation.repeatCount = Float.infinity
         return animation
     }
     
-    private func randomizeInterval(interval: NSTimeInterval, withVariance variance:Double) -> NSTimeInterval {
+    private func randomize(interval: TimeInterval, withVariance variance:Double) -> TimeInterval {
         let random = (Double(arc4random_uniform(1000)) - 500.0) / 500.0
         return interval + variance * random;
     }
@@ -307,23 +307,18 @@ extension DragDropCollectionView {
 
 //Assisting Functions
 extension DragDropCollectionView {
-    private func getRasterizedImageCopyOfCell(cell: UICollectionViewCell) -> UIImage {
+    func getRasterizedImageCopyOfCell(cell: UICollectionViewCell) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(cell.bounds.size, false, 0.0)
-        cell.layer.renderInContext(UIGraphicsGetCurrentContext())
+        cell.layer.render(in: UIGraphicsGetCurrentContext()!)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-        return image
+        return image!
     }
 
 }
 
-public func dispatchOnMainQueueAfterDelay(delay:Double, closure:()->()) {
-    dispatch_after(
-        dispatch_time(
-            DISPATCH_TIME_NOW,
-            Int64(delay * Double(NSEC_PER_SEC))
-        ),
-        dispatch_get_main_queue(), closure)
+public func dispatchOnMainQueueAfter(delay:Double, closure:@escaping ()->Void) {
+    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now()+delay, qos: DispatchQoS.userInteractive, flags: DispatchWorkItemFlags.enforceQoS, execute: closure)
 }
 
 public func distanceBetweenPoints(firstPoint: CGPoint, secondPoint: CGPoint) -> CGFloat {
