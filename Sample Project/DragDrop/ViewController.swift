@@ -9,6 +9,18 @@
 import UIKit
 
 class ViewController: UIViewController, UICollectionViewDataSource, DrapDropCollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath as IndexPath) as UICollectionViewCell
+        cell.backgroundColor = colors[indexPath.row]
+        return cell
+    }
+    
+    func dragDropCollectionViewDidMoveCellFromInitialIndexPath(_ initialIndexPath: IndexPath, toNewIndexPath newIndexPath: IndexPath) {
+        let colorToMove = colors[initialIndexPath.row]
+        colors.remove(at: initialIndexPath.row)
+        colors.insert(colorToMove, at: newIndexPath.row)
+    }
+    
     @IBOutlet var dragDropCollectionView: DragDropCollectionView!
     var colors: [UIColor] = {
         var randomColors = [UIColor]()
@@ -27,25 +39,17 @@ class ViewController: UIViewController, UICollectionViewDataSource, DrapDropColl
         dragDropCollectionView.enableDragging(true)
     }
     
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return colors.count
     }
     
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("collectionViewCell", forIndexPath: indexPath) as UICollectionViewCell
-        cell.backgroundColor = colors[indexPath.row]
-        return cell
-    }
-    
-    func dragDropCollectionViewDidMoveCellFromInitialIndexPath(initialIndexPath: NSIndexPath, toNewIndexPath newIndexPath: NSIndexPath) {
-        let colorToMove = colors[initialIndexPath.row]
-        colors.removeAtIndex(initialIndexPath.row)
-        colors.insert(colorToMove, atIndex: newIndexPath.row)
-    }
+  
     
     @IBAction func toggleWiggle(sender: UISwitch) {
-        if sender.on {
+        if sender.isOn {
+            
             dragDropCollectionView.startWiggle()
+            
         } else {
             dragDropCollectionView.stopWiggle()
         }

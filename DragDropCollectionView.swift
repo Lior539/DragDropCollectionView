@@ -37,7 +37,7 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
     
     override var intrinsicContentSize: CGSize {
         self.layoutIfNeeded()
-        return CGSize(width: UIViewNoIntrinsicMetric, height: self.contentSize.height)
+        return CGSize(width: UIView.noIntrinsicMetric, height: self.contentSize.height)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -62,7 +62,7 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
         self.invalidateIntrinsicContentSize()
     }
     
-    func handleLongPress(_ longPressRecognizer: UILongPressGestureRecognizer) {
+    @objc func handleLongPress(_ longPressRecognizer: UILongPressGestureRecognizer) {
         let touchLocation = longPressRecognizer.location(in: self)
         
         switch (longPressRecognizer.state) {
@@ -70,7 +70,7 @@ class DragDropCollectionView: UICollectionView, UIGestureRecognizerDelegate {
             draggedCellIndexPath = self.indexPathForItem(at: touchLocation)
             if (draggedCellIndexPath != nil) {
                 draggingDelegate?.dragDropCollectionViewDraggingDidBeginWithCellAtIndexPath?(draggedCellIndexPath!)
-                let draggedCell = self.cellForItem(at: draggedCellIndexPath! as IndexPath) as UICollectionViewCell!
+                let draggedCell = self.cellForItem(at: draggedCellIndexPath! as IndexPath) as UICollectionViewCell?
                 draggingView = UIImageView(image: getRasterizedImageCopyOfCell(draggedCell!))
                 draggingView!.center = (draggedCell!.center)
                 self.addSubview(draggingView!)
@@ -181,7 +181,7 @@ extension DragDropCollectionView {
         }
         newContentOffset = CGPoint(x: self.contentOffset.x, y: self.contentOffset.y + increment)
         let flowLayout = self.collectionViewLayout as! UICollectionViewFlowLayout
-        if flowLayout.scrollDirection == UICollectionViewScrollDirection.horizontal{
+        if flowLayout.scrollDirection == UICollectionView.ScrollDirection.horizontal{
             newContentOffset = CGPoint(x: self.contentOffset.x + increment, y: self.contentOffset.y)
         }
         if ((direction == AutoScrollDirection.towardsOrigin && newContentOffset.y < 0) || (direction == AutoScrollDirection.awayFromOrigin && newContentOffset.y > self.contentSize.height - self.frame.height)) {
@@ -191,11 +191,11 @@ extension DragDropCollectionView {
         } else {
             UIView.animate(withDuration: 0.3
                 , delay: 0.0
-                , options: UIViewAnimationOptions.curveLinear
+                , options: UIView.AnimationOptions.curveLinear
                 , animations: { () -> Void in
                     self.setContentOffset(newContentOffset, animated: false)
                     if (self.draggingView != nil) {
-                        if flowLayout.scrollDirection == UICollectionViewScrollDirection.vertical{
+                        if flowLayout.scrollDirection == UICollectionView.ScrollDirection.vertical{
                             var draggingFrame = self.draggingView!.frame
                             draggingFrame.origin.y += increment
                             self.draggingView!.frame = draggingFrame
@@ -208,7 +208,7 @@ extension DragDropCollectionView {
                 }) { (finished) -> Void in
                     dispatchOnMainQueueAfter(0.0, closure: { () -> () in
                         var updatedTouchLocationWithNewOffset = CGPoint(x: currentLongPressTouchLocation.x, y: currentLongPressTouchLocation.y + increment)
-                        if flowLayout.scrollDirection == UICollectionViewScrollDirection.horizontal{
+                        if flowLayout.scrollDirection == UICollectionView.ScrollDirection.horizontal{
                             updatedTouchLocationWithNewOffset = CGPoint(x: currentLongPressTouchLocation.x + increment, y: currentLongPressTouchLocation.y)
                         }
                         let scroller = self.shouldAutoScroll(updatedTouchLocationWithNewOffset)
@@ -257,6 +257,7 @@ extension DragDropCollectionView {
 //Wiggle Animation
 extension DragDropCollectionView {
     func startWiggle() {
+        
         for cell in visibleCells {
             addWiggleAnimationTo(cell )
         }
@@ -284,11 +285,15 @@ extension DragDropCollectionView {
         CATransaction.begin()
         CATransaction.setDisableActions(false)
         cell.layer.add(rotationAnimation(), forKey: "rotation")
+        
         cell.layer.add(bounceAnimation(), forKey: "bounce")
+        
         CATransaction.commit()
+        
     }
     
     fileprivate func rotationAnimation() -> CAKeyframeAnimation {
+        
         let animation = CAKeyframeAnimation(keyPath: "transform.rotation.z")
         let angle = CGFloat(0.04)
         let duration = TimeInterval(0.1)
@@ -298,6 +303,7 @@ extension DragDropCollectionView {
         animation.duration = self.randomize(duration, withVariance: variance)
         animation.repeatCount = Float.infinity
         return animation
+        
     }
     
     fileprivate func bounceAnimation() -> CAKeyframeAnimation {
@@ -310,9 +316,11 @@ extension DragDropCollectionView {
         animation.duration = self.randomize(duration, withVariance: variance)
         animation.repeatCount = Float.infinity
         return animation
+        
     }
     
     fileprivate func randomize(_ interval: TimeInterval, withVariance variance:Double) -> TimeInterval {
+        
         let random = (Double(arc4random_uniform(1000)) - 500.0) / 500.0
         return interval + variance * random;
     }
